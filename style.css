@@ -1,0 +1,7 @@
+:root { --fg:#0a0a0a; --bg:#ffffff; --muted:#6b7280; --accent:#2563eb; }
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;color:var(--fg);background:var(--bg);line-height:1.6;padding:1rem}
+header,footer{max-width:960px;margin:0 auto;padding:1rem}
+nav a{margin-right:1rem;text-decoration:none;color:var(--accent)}
+main{max-width:960px;margin:2rem auto;padding:0 1rem}
+section{margin:2rem 0}
+a{color:var(--accent)}
