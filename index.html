@@ -1,56 +1,65 @@
-<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your AI Startup — One-liner value prop</title>
-  <meta name="description" content="Say what you do, for whom, and the outcome." />
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AlgoNest — AI-Powered Sports Play Analyzer</title>
+<meta name="description" content="Analyze game video with computer vision. Track players automatically and turn footage into tactical insights—heatmaps, movement trends, and positional analytics." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232563eb'/%3E%3Cpath d='M20 36c6-10 18-10 24 0' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='25' cy='26' r='4' fill='white'/%3E%3Ccircle cx='39' cy='26' r='4' fill='white'/%3E%3C/svg%3E" />
 </head>
 <body>
-  <header>
-    <h1>YourAI</h1>
-    <nav>
-      <a href="#product">Product</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
+<header class="container SiteHeader">
+<a class="brand" href="/">AlgoNest</a>
+<nav class="nav">
+<a href="#features">Features</a>
+<a href="#stack">Stack</a>
+<a href="#usecases">Use cases</a>
+<a href="dashboard.html" class="btn">Live Demo</a>
+</nav>
+</header>
 
-  <main>
-    <section>
-      <h2>Ship smarter with AI</h2>
-      <p>One clear sentence about the problem you solve and the benefit.</p>
-      <a href="#contact">Request access →</a>
-    </section>
 
-    <section id="product">
-      <h2>Why teams choose YourAI</h2>
-      <ul>
-        <li>Benefit A</li>
-        <li>Benefit B</li>
-        <li>Benefit C</li>
-      </ul>
-    </section>
+<main>
+<section class="hero container">
+<h1>AI‑Powered Sports Play Analyzer</h1>
+<p class="lead">Computer vision that watches your games for you — <strong>automatic player tracking</strong>, <strong>heatmaps</strong>, and <strong>tactical insights</strong> in minutes.</p>
+<div class="cta-row">
+<a class="btn btn-primary" href="dashboard.html">Try the Demo</a>
+<a class="btn btn-ghost" href="#features">See Features</a>
+</div>
+<div class="hero-media">
+<!-- Inline SVG mock of a field with tracked players -->
+<svg viewBox="0 0 900 450" class="fieldDemo" role="img" aria-label="Soccer field with tracked players">
+<rect x="0" y="0" width="900" height="450" rx="24" ry="24" fill="#0b6e4f"/>
+<rect x="20" y="20" width="860" height="410" stroke="#e5e7eb" fill="none" stroke-width="4"/>
+<circle cx="450" cy="225" r="72" stroke="#e5e7eb" fill="none" stroke-width="3"/>
+<line x1="450" y1="20" x2="450" y2="430" stroke="#e5e7eb" stroke-width="3"/>
+<g class="players" fill="#ffffff">
+<circle cx="260" cy="190" r="9"/>
+<circle cx="320" cy="280" r="9"/>
+<circle cx="540" cy="200" r="9"/>
+<circle cx="610" cy="270" r="9"/>
+</g>
+<g class="trails" stroke="#93c5fd" stroke-width="4" fill="none" opacity="0.9">
+<path d="M200,180 C260,190 280,210 320,280"/>
+<path d="M700,220 C640,210 590,230 540,200"/>
+</g>
+</svg>
+</div>
+</section>
 
-    <section id="pricing">
-      <h2>Simple pricing</h2>
-      <p>Starter: $0/mo · Pro: $29/mo</p>
-    </section>
 
-    <section id="contact">
-      <h2>Contact</h2>
-      <p>Email: hello@yourai.com</p>
-    </section>
-  </main>
-
-  <footer>
-    <small>© <span id="year"></span> YourAI</small>
-  </footer>
-
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
-</body>
+<section id="features" class="container section">
+<h2>Built for coaches and analysts</h2>
+<div class="cards3">
+<article class="card">
+<h3>Automated Tracking</h3>
+<p>YOLO‑based detection + multi‑object tracking follow every player across frames — no manual tagging.</p>
+</article>
+<article class="card">
+<h3>Heatmaps & Movement</h3>
+<p>Instant heatmaps, average positions, and speed charts to reveal shape, spacing, and trends.</p>
+</article>
+<article class="card">
+<h3>Coach‑ready Reports</h3>
 </html>
-
