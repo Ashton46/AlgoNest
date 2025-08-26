@@ -1,1 +1,29 @@
-
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AlgoNest — Settings</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header class="container SiteHeader">
+<a class="brand" href="/">AlgoNest</a>
+<nav class="nav">
+<a href="index.html#features">Features</a>
+<a href="dashboard.html">Live Demo</a>
+<a href="reports.html">Reports</a>
+</nav>
+</header>
+<main class="container">
+<h1>Settings</h1>
+<form class="form">
+<label>Full name<input type="text" placeholder="Your name" value="Ashton"/></label>
+<label>Email<input type="email" placeholder="you@example.com"/></label>
+<label>Team name<input type="text" placeholder="Algo FC"/></label>
+<button class="btn btn-primary" type="button">Save</button>
+</form>
+</main>
+<footer class="container footer"><small>© <span id="year4"></span> AlgoNest</small></footer>
+<script>document.getElementById('year4').textContent = new Date().getFullYear();</script>
+</body>
+</html>
