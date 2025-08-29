@@ -1,35 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import axios from 'axios';
+import GameForm from './GameForm';
+import PredictionDisplay from './PredictionDisplay';
+import './App.css';
+
+const API_URL = 'http://localhost:8000/predict';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [formData, setFormData] = useState({
+    sport: 'football',
+    score_home: '',
+    score_away: '',
+    time_minutes: '',
+    time_seconds: '',
+    down: '1',
+    distance: '',
+    yard_line: ''
+  });
+
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setPrediction(null);
+    setError(null);
+
+    try {
+      const response = await axios.post(API_URL, formData);
+      setPrediction(response.data);
+    } catch (err) {
+      setError("An error occurred. Please check your data and try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="App">
+      <header className="App-header">
+        <h1>AI Play Predictor 🧠🏈</h1>
+        <p>Input a game situation and predict the next play.</p>
+      </header>
+      <main>
+        <div className="content-container">
+          <GameForm formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} />
+          <div className="output-container">
+            {loading && <p>Predicting play...</p>}
+            {error && <p className="error">{error}</p>}
+            {prediction && <PredictionDisplay prediction={prediction} />}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
