@@ -7,11 +7,11 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
   useEffect(() => {
     const zones = [
       { name: 'Paint', x: 50, y: 15, probability: null, color: '#ff6262ff' },
-      { name: 'Mid-Range Left', x: 30, y: 35, probability: null, color: '#4ecdc4' },
+      { name: 'Mid-Range Left', x: 30, y: 35, probability: null, color: '#352dd0ff' },
       { name: 'Mid-Range Right', x: 70, y: 35, probability: null, color: '#c14be1ff' },
       { name: '3PT Corner Left', x: 15, y: 85, probability: null, color: '#1cdd83ff' },
       { name: '3PT Corner Right', x: 85, y: 85, probability: null, color: '#e5db1dff' },
-      { name: '3PT Top', x: 50, y: 75, probability: null, color: '#ff9ff3' },
+      { name: '3PT Top', x: 50, y: 75, probability: null, color: '#23dfedff' },
     ];
     setShotChart(zones);
   }, []);
