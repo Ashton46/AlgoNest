@@ -1,41 +1,148 @@
 import React from 'react';
+import { Activity, Brain, Timer, Target, Zap } from 'lucide-react';
 
-const GameForm = ({ formData, handleChange, handleSubmit }) => {
+const GameForm = ({ formData, handleChange, handleSubmit, loading }) => {
   return (
-    <form className="game-form" onSubmit={handleSubmit}>
-      <h2>Game Situation</h2>
-      <label>
-        Sport:
-        <select name="sport" value={formData.sport} onChange={handleChange}>
-          <option value="football">Football</option>
-          <option value="basketball">Basketball</option>
-        </select>
-      </label>
-
-      {formData.sport === 'football' && (
-        <>
-          <label>
-            Down:
-            <select name="down" value={formData.down} onChange={handleChange}>
-              <option value="1">1st</option>
-              <option value="2">2nd</option>
-              <option value="3">3rd</option>
-              <option value="4">4th</option>
+    <div className="glass-card">
+      <div className="game-form">
+        <div className="form-header">
+          <Brain className="form-icon" />
+          <h2>Advanced Game Analysis</h2>
+        </div>
+        
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="form-label">
+              <Activity size={16} />
+              Sport
+            </label>
+            <select name="sport" value={formData.sport} onChange={handleChange} className="form-input">
+              <option value="football">🏈 Football</option>
+              <option value="basketball">🏀 Basketball</option>
             </select>
-          </label>
-          <label>
-            Distance to go:
-            <input type="number" name="distance" value={formData.distance} onChange={handleChange} min="1" required />
-          </label>
-          <label>
-            Yard Line:
-            <input type="number" name="yard_line" value={formData.yard_line} onChange={handleChange} min="1" max="100" required />
-          </label>
-        </>
-      )}
+          </div>
 
-      <button type="submit">Predict Play</button>
-    </form>
+          <div className="form-group">
+            <label className="form-label">
+              <Timer size={16} />
+              Game Time
+            </label>
+            <div className="time-inputs">
+              <input 
+                type="number" 
+                name="time_minutes" 
+                placeholder="Min" 
+                value={formData.time_minutes} 
+                onChange={handleChange} 
+                className="form-input time-input"
+                min="0" 
+                max="15"
+              />
+              <span className="time-separator">:</span>
+              <input 
+                type="number" 
+                name="time_seconds" 
+                placeholder="Sec" 
+                value={formData.time_seconds} 
+                onChange={handleChange} 
+                className="form-input time-input"
+                min="0" 
+                max="59"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Target size={16} />
+              Score (Home vs Away)
+            </label>
+            <div className="score-inputs">
+              <input 
+                type="number" 
+                name="score_home" 
+                placeholder="Home" 
+                value={formData.score_home} 
+                onChange={handleChange} 
+                className="form-input score-input"
+                min="0"
+              />
+              <span className="score-separator">-</span>
+              <input 
+                type="number" 
+                name="score_away" 
+                placeholder="Away" 
+                value={formData.score_away} 
+                onChange={handleChange} 
+                className="form-input score-input"
+                min="0"
+              />
+            </div>
+          </div>
+
+          {formData.sport === 'football' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Down & Distance</label>
+                <div className="down-distance">
+                  <select name="down" value={formData.down} onChange={handleChange} className="form-input">
+                    <option value="1">1st Down</option>
+                    <option value="2">2nd Down</option>
+                    <option value="3">3rd Down</option>
+                    <option value="4">4th Down</option>
+                  </select>
+                  <input 
+                    type="number" 
+                    name="distance" 
+                    placeholder="Yards to go" 
+                    value={formData.distance} 
+                    onChange={handleChange} 
+                    className="form-input"
+                    min="1" 
+                    required 
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Field Position</label>
+                <div className="yard-line-container">
+                  <input 
+                    type="range"
+                    name="yard_line" 
+                    value={formData.yard_line || 50} 
+                    onChange={handleChange} 
+                    className="yard-line-slider"
+                    min="1" 
+                    max="99"
+                  />
+                  <span className="yard-line-value">{formData.yard_line || 50} Yard Line</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <button 
+          type="button" 
+          className={`predict-button ${loading ? 'loading' : ''}`}
+          disabled={loading}
+          onClick={handleSubmit}
+        >
+          {loading ? (
+            <>
+              <div className="spinner"></div>
+              Analyzing with AI...
+            </>
+          ) : (
+            <>
+              <Zap size={20} />
+              Run Advanced Prediction
+            </>
+          )}
+        </button>
+      </div>
+    </div>
   );
 };
 
