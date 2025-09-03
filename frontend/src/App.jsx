@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import GameForm from './components/GameForm';
 import PredictionDisplay from './PredictionDisplay';
-import './App.css';
+import './styles/App.css';
 
 const API_URL = 'http://localhost:8000/predict';
 
