@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import GameForm from './GameForm';
+import GameForm from './components/GameForm';
 import PredictionDisplay from './PredictionDisplay';
 import './App.css';
 
