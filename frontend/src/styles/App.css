@@ -298,3 +298,139 @@
     padding: 1.5rem;
   }
 }
+
+/* Additional styles for clean version - Add to App.css */
+
+/* No Data Screen */
+.no-data-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.no-data-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 2rem;
+}
+
+.no-data-icon {
+  color: #feca57;
+  margin-bottom: 2rem;
+  opacity: 0.7;
+}
+
+.no-data-content h3 {
+  margin-bottom: 1rem;
+  color: #feca57;
+  font-size: 1.5rem;
+}
+
+.no-data-content p {
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.empty-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-chart h4 {
+  color: #ccc;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.empty-chart-content {
+  text-align: center;
+  padding: 1rem;
+}
+
+.empty-chart-content p {
+  color: #999;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.chart-loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #00ff88;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.metric-value.placeholder {
+  color: #666;
+  font-style: italic;
+}
+
+.metric-item.no-data {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+/* Legend Item States */
+.legend-item.no-data {
+  opacity: 0.6;
+}
+
+.legend-item.no-data .zone-probability {
+  color: #666;
+  font-style: italic;
+}
+
+/* Zone Indicator States */
+.color-indicator.no-data {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-style: dashed;
+}
+
+/* Chart Placeholder Messages */
+.chart-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .no-data-content {
+    padding: 1rem;
+  }
+  
+  .no-data-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .empty-chart {
+    height: 150px;
+  }
+}
