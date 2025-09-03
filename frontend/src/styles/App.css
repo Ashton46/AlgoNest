@@ -299,9 +299,6 @@
   }
 }
 
-/* Additional styles for clean version - Add to App.css */
-
-/* No Data Screen */
 .no-data-screen {
   display: flex;
   align-items: center;
@@ -392,7 +389,6 @@
   border-style: dashed;
 }
 
-/* Legend Item States */
 .legend-item.no-data {
   opacity: 0.6;
 }
@@ -402,13 +398,11 @@
   font-style: italic;
 }
 
-/* Zone Indicator States */
 .color-indicator.no-data {
   background: rgba(255, 255, 255, 0.1) !important;
   border-style: dashed;
 }
 
-/* Chart Placeholder Messages */
 .chart-placeholder {
   position: absolute;
   top: 50%;
@@ -420,7 +414,6 @@
   opacity: 0.7;
 }
 
-/* Responsive Adjustments */
 @media (max-width: 768px) {
   .no-data-content {
     padding: 1rem;
