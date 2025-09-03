@@ -6,6 +6,7 @@ import InteractiveBasketballCourt from './components/InteractiveBasketballCourt'
 import TrendsAndProbability from './components/TrendsAndProbability';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
+import { predictionService } from './services/predictionService';
 import './styles/App.css';
 
 function App() {

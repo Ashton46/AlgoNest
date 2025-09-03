@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Map, TrendingUp } from 'lucide-react';
 import * as THREE from 'three';

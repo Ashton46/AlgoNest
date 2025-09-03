@@ -149,7 +149,6 @@ const TrendsAndProbability = ({ prediction }) => {
           )}
         </div>
 
-        {/* Real-time metrics */}
         <div className="glass-card metrics-card">
           <div className="metrics-header">
             <Activity size={20} />
@@ -201,3 +200,5 @@ const EmptyChart = ({ title, message = "No data available" }) => (
     </div>
   </div>
 );
+
+export default { EmptyChart, TrendsAndProbability };
