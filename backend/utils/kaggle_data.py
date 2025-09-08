@@ -1,12 +1,9 @@
 import pandas as pd
-import numpy as np
 import os
-import kaggle
 from kaggle.api.kaggle_api_extended import KaggleApi
 from decouple import config
 import logging
 from typing import Dict, Tuple
-import zipfile
 
 logger = logging.getLogger(__name__)
 
