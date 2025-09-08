@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 from kaggle.api.kaggle_api_extended import KaggleApi
 from decouple import config
