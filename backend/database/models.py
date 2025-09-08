@@ -10,7 +10,7 @@ class PredictionLog(Base):
    
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     sport = Column(String(20), nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     input_data = Column(JSON, nullable=False)
     predictions = Column(JSON, nullable=False)
     win_probability = Column(JSON, nullable=True)
@@ -32,8 +32,8 @@ class GameSituation(Base):
     description = Column(Text, nullable=False)
     common_plays = Column(JSON, nullable=False)
     success_rate = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
    
     def __repr__(self):
         return f"<GameSituation(sport='{self.sport}', type='{self.situation_type}')>"
@@ -50,8 +50,8 @@ class ModelPerformance(Base):
     f1_score = Column(Float, default=0.0)
     training_samples = Column(Integer, default=0)
     test_samples = Column(Integer, default=0)
-    training_date = Column(DateTime, default=datetime.utcnow)
-    evaluation_date = Column(DateTime, default=datetime.utcnow)
+    training_date = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    evaluation_date = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
    
     def __repr__(self):
         return f"<ModelPerformance(sport='{self.sport}', accuracy='{self.accuracy}')>"
