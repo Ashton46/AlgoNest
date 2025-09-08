@@ -9,7 +9,7 @@ import joblib
 import logging
 from typing import List, Dict
 from .schemas import PlayPrediction, WinProbability
-
+from utils.kaggle_data import sports_data
 
 logger = logging.getLogger(__name__)
 
