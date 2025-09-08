@@ -38,16 +38,32 @@ class PredictionService {
 
   async predict(gameData) {
     try {
-      const response = await this.api.post(API_CONFIG.ENDPOINTS.PREDICT, gameData);
+      const backendData = this.convertToBackendFormat(gameData);
+      const response = await this.api.post(API_CONFIG.ENDPOINTS.PREDICT, backendData);
       return response.data;
     } catch (error) {
       throw new Error(`Prediction failed: ${error.message}`);
     }
   }
 
+  convertToBackendFormat(frontendData) {
+    const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
+    
+    return {
+      sport,
+      score_home: parseInt(score_home) || 0,
+      score_away: parseInt(score_away) || 0,
+      time_minutes: parseInt(time_minutes) || 0,
+      time_seconds: parseInt(time_seconds) || 0,
+      down: parseInt(down) || 1,
+      distance: parseInt(distance) || 10,
+      yard_line: parseInt(yard_line) || 50
+    };
+  }
+
   async getHistoricalData(params) {
     try {
-      const response = await this.api.get(API_CONFIG.ENDPOINTS.HISTORICAL, { params });
+      const response = await this.api.get('/history', { params });
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch historical data: ${error.message}`);
