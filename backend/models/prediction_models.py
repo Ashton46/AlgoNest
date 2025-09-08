@@ -202,5 +202,217 @@ class UnifiedSportsPredictor:
         except Exception as e:
             logger.error(f"❌ ML prediction failed: {e}")
             return self._predict_with_rules(sport, features)
+    def _convert_nfl_features(self, features: Dict) -> np.ndarray:
+        yard_line = features.get('yard_line', 50)
+        distance = features.get('distance', 10)
+        quarter = features.get('quarter', 1)
+        
+        return np.array([
+            features.get('down', 1),
+            distance,
+            yard_line,
+            quarter,
+            features.get('score_differential', 0),
+            1 if yard_line <= 20 else 0,
+            1 if distance <= 3 else 0,
+            1 if distance >= 7 else 0,
+            1 if quarter == 4 else 0
+        ])
+    
+    def _convert_nba_features(self, features: Dict) -> np.ndarray:
+        shot_distance = features.get('shot_distance', 15)
+        quarter = features.get('quarter', 1)
+        
+        return np.array([
+            quarter,
+            shot_distance,
+            features.get('score_differential', 0),
+            1 if shot_distance <= 8 else 0,
+            1 if shot_distance >= 23.75 else 0,
+            1 if abs(features.get('score_differential', 0)) <= 5 else 0,
+            1 if quarter == 4 else 0
+        ])
+    
+    def _predict_with_rules(self, sport: str, features: Dict) -> List[PlayPrediction]:
+        if sport == "football":
+            return self._predict_nfl_rules(features)
+        elif sport == "basketball":
+            return self._predict_nba_rules(features)
+        return [PlayPrediction(play_type="Unknown Play", probability=1.0, expected_points=0.0)]
+    
+    def _predict_nfl_rules(self, features: Dict) -> List[PlayPrediction]:
+        distance = features.get('distance', 10)
+        down = features.get('down', 1)
+        yard_line = features.get('yard_line', 50)
+        quarter = features.get('quarter', 1)
+        score_diff = features.get('score_differential', 0)
+        
+        if yard_line <= 5:
+            return [
+                PlayPrediction(play_type="Run - Goal Line", probability=0.60, expected_points=0.42),
+                PlayPrediction(play_type="Pass - Fade", probability=0.25, expected_points=0.48),
+                PlayPrediction(play_type="Pass - Slant", probability=0.15, expected_points=0.45)
+            ]
+        elif yard_line <= 20:
+            return [
+                PlayPrediction(play_type="Run - Inside", probability=0.45, expected_points=0.40),
+                PlayPrediction(play_type="Pass - Short", probability=0.35, expected_points=0.52),
+                PlayPrediction(play_type="Pass - Red Zone", probability=0.20, expected_points=0.58)
+            ]
+        elif distance <= 3:
+            return [
+                PlayPrediction(play_type="Run - Inside", probability=0.55, expected_points=0.38),
+                PlayPrediction(play_type="Run - Outside", probability=0.25, expected_points=0.42),
+                PlayPrediction(play_type="Pass - Quick", probability=0.20, expected_points=0.46)
+            ]
+        elif down >= 3 and distance >= 7:
+            return [
+                PlayPrediction(play_type="Pass - Deep", probability=0.45, expected_points=0.85),
+                PlayPrediction(play_type="Pass - Intermediate", probability=0.35, expected_points=0.62),
+                PlayPrediction(play_type="Screen Pass", probability=0.20, expected_points=0.45)
+            ]
+        elif quarter == 4 and features.get('time_remaining', 900) <= 120:
+            if score_diff < 0:
+                return [
+                    PlayPrediction(play_type="Pass - Deep", probability=0.50, expected_points=0.88),
+                    PlayPrediction(play_type="Pass - Intermediate", probability=0.35, expected_points=0.65),
+                    PlayPrediction(play_type="Screen Pass", probability=0.15, expected_points=0.48)
+                ]
+            else:
+                return [
+                    PlayPrediction(play_type="Run - Clock", probability=0.55, expected_points=0.35),
+                    PlayPrediction(play_type="Pass - Short", probability=0.30, expected_points=0.52),
+                    PlayPrediction(play_type="Kneel Down", probability=0.15, expected_points=0.0)
+                ]
+        else:
+            return [
+                PlayPrediction(play_type="Run - Inside", probability=0.40, expected_points=0.42),
+                PlayPrediction(play_type="Pass - Intermediate", probability=0.35, expected_points=0.65),
+                PlayPrediction(play_type="Run - Outside", probability=0.15, expected_points=0.45),
+                PlayPrediction(play_type="Screen Pass", probability=0.10, expected_points=0.52)
+            ]
+    
+    def _predict_nba_rules(self, features: Dict) -> List[PlayPrediction]:
+        score_diff = features.get('score_differential', 0)
+        shot_clock = features.get('shot_clock', 24)
+        quarter = features.get('quarter', 1)
+        time_remaining = features.get('time_remaining', 600)
+        
+        if quarter == 4 and time_remaining <= 300 and abs(score_diff) <= 5:
+            return [
+                PlayPrediction(play_type="Isolation", probability=0.40, expected_points=0.95),
+                PlayPrediction(play_type="Pick and Roll", probability=0.30, expected_points=1.05),
+                PlayPrediction(play_type="Three-Point Shot", probability=0.20, expected_points=1.12),
+                PlayPrediction(play_type="Post Up", probability=0.10, expected_points=0.92)
+            ]
+        elif shot_clock <= 7:
+            return [
+                PlayPrediction(play_type="Isolation", probability=0.45, expected_points=0.85),
+                PlayPrediction(play_type="Quick Three", probability=0.30, expected_points=1.08),
+                PlayPrediction(play_type="Drive to Basket", probability=0.25, expected_points=0.95)
+            ]
+        elif abs(score_diff) >= 20:
+            return [
+                PlayPrediction(play_type="Three-Point Shot", probability=0.35, expected_points=1.10),
+                PlayPrediction(play_type="Fast Break", probability=0.30, expected_points=1.25),
+                PlayPrediction(play_type="Mid-Range", probability=0.20, expected_points=0.92),
+                PlayPrediction(play_type="Bench Isolation", probability=0.15, expected_points=0.78)
+            ]
+        else:
+            return [
+                PlayPrediction(play_type="Pick and Roll", probability=0.35, expected_points=1.02),
+                PlayPrediction(play_type="Three-Point Shot", probability=0.25, expected_points=1.15),
+                PlayPrediction(play_type="Post Up", probability=0.20, expected_points=0.96),
+                PlayPrediction(play_type="Cut to Basket", probability=0.15, expected_points=1.22),
+                PlayPrediction(play_type="Isolation", probability=0.05, expected_points=0.88)
+            ]
+    
+    def _format_play_type(self, sport: str, category: str) -> str:
+        format_map = {
+            'football': {
+                'run': 'Run Play', 'pass': 'Pass Play',
+                'punt': 'Punt', 'field_goal': 'Field Goal Attempt'
+            },
+            'basketball': {
+                '3PT': 'Three-Point Shot', 'Paint': 'Paint/Close Shot',
+                'MidRange': 'Mid-Range Jumper'
+            }
+        }
+        return format_map.get(sport, {}).get(category, category.title())
+    
+    def _estimate_expected_value(self, sport: str, play_type: str, features: Dict) -> float:
+        base_values = {
+            'football': {
+                'run': 0.42, 'pass': 0.65, 'punt': 0.0, 'field_goal': 0.85
+            },
+            'basketball': {
+                '3PT': 1.05, 'Paint': 1.15, 'MidRange': 0.90
+            }
+        }
+        
+        base_value = base_values.get(sport, {}).get(play_type, 0.5)
+
+        if sport == "football":
+            if features.get('down', 1) == 1:
+                base_value += 0.05
+            if features.get('distance', 10) <= 3:
+                base_value += 0.08
+            if features.get('yard_line', 50) <= 20:
+                base_value -= 0.12
+        
+        elif sport == "basketball":
+            if features.get('quarter', 1) == 4 and features.get('time_remaining', 600) <= 300:
+                base_value -= 0.08
+            if features.get('shot_clock', 24) <= 7:
+                base_value -= 0.05
+        
+        return round(max(0, base_value), 2)
+    
+    def get_model_stats(self, sport: str) -> Dict:
+        return self.model_stats.get(sport, {"status": "not_trained"})
+    
+    def get_win_probability(self, sport: str, features: Dict) -> WinProbability:
+        if sport == "football":
+            return self._calculate_nfl_win_probability(features)
+        elif sport == "basketball":
+            return self._calculate_nba_win_probability(features)
+        return WinProbability(home_win_prob=0.5, away_win_prob=0.5)
+    
+    def _calculate_nfl_win_probability(self, features: Dict) -> WinProbability:
+        score_diff = features.get('score_differential', 0)
+        time_remaining = features.get('time_remaining', 900)
+        yard_line = features.get('yard_line', 50)
+        
+        base_prob = 0.5
+        base_prob += min(score_diff * 0.02, 0.4) if score_diff > 0 else -min(abs(score_diff) * 0.02, 0.4)
+        
+        time_factor = time_remaining / 3600
+        base_prob += time_factor * 0.1 if score_diff > 0 else -time_factor * 0.1
+        
+        field_factor = (100 - yard_line) / 100
+        base_prob += field_factor * 0.15
+        
+        home_prob = max(0.01, min(0.99, base_prob))
+        return WinProbability(home_win_prob=round(home_prob, 3), away_win_prob=round(1 - home_prob, 3))
+    
+    def _calculate_nba_win_probability(self, features: Dict) -> WinProbability:
+        score_diff = features.get('score_differential', 0)
+        time_remaining = features.get('time_remaining', 720)
+        quarter = features.get('quarter', 1)
+        
+        base_prob = 0.5
+        base_prob += min(score_diff * 0.03, 0.45) if score_diff > 0 else -min(abs(score_diff) * 0.03, 0.45)
+        
+        time_factor = time_remaining / (2880 / (5 - quarter))
+        base_prob += time_factor * 0.12 if score_diff > 0 else -time_factor * 0.12
+        
+        if quarter >= 4:
+            base_prob += 0.08 if score_diff > 0 else -0.08
+        
+        home_prob = max(0.01, min(0.99, base_prob))
+        return WinProbability(home_win_prob=round(home_prob, 3), away_win_prob=round(1 - home_prob, 3))
+
+predictor = UnifiedSportsPredictor()
+
     
     
