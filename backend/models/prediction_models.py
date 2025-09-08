@@ -1,4 +1,3 @@
-# models/prediction_models.py - Real ML Models with Kaggle Data
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -10,7 +9,7 @@ import joblib
 import logging
 from typing import List, Dict
 from .schemas import PlayPrediction, WinProbability
-#from utils.kaggle_data import sports_data
+
 
 logger = logging.getLogger(__name__)
 
