@@ -1,11 +1,14 @@
 import axios from 'axios';
 
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000',
+  BASE_URL: 'http://localhost:8000/api',
   ENDPOINTS: {
     PREDICT: '/predict',
-    HISTORICAL: '/historical',
-    METRICS: '/metrics'
+    HISTORICAL: '/history',
+    METRICS: '/metrics',
+    HEALTH: '/health',
+    TRAIN: '/models/{sport}/train',
+    STATS: '/models/{sport}/stats'
   }
 };
 
@@ -49,6 +52,9 @@ class PredictionService {
   convertToBackendFormat(frontendData) {
     const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
     
+    const score_differential = parseInt(score_home) - parseInt(score_away);
+    const time_remaining = (parseInt(time_minutes) || 0) * 60 + (parseInt(time_seconds) || 0);
+    
     return {
       sport,
       score_home: parseInt(score_home) || 0,
@@ -57,13 +63,17 @@ class PredictionService {
       time_seconds: parseInt(time_seconds) || 0,
       down: parseInt(down) || 1,
       distance: parseInt(distance) || 10,
-      yard_line: parseInt(yard_line) || 50
+      yard_line: parseInt(yard_line) || 50,
+      score_differential,
+      time_remaining,
+      quarter: frontendData.quarter || 1,
+      shot_clock: frontendData.shot_clock || 24
     };
   }
 
   async getHistoricalData(params) {
     try {
-      const response = await this.api.get('/history', { params });
+      const response = await this.api.get(API_CONFIG.ENDPOINTS.HISTORICAL, { params });
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch historical data: ${error.message}`);
@@ -78,20 +88,44 @@ class PredictionService {
       throw new Error(`Failed to fetch metrics: ${error.message}`);
     }
   }
+
+  async healthCheck() {
+    try {
+      const response = await this.api.get(API_CONFIG.ENDPOINTS.HEALTH);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Health check failed: ${error.message}`);
+    }
+  }
+
+  async trainModel(sport, forceRetrain = false, background = true) {
+    try {
+      const response = await this.api.get(
+        API_CONFIG.ENDPOINTS.TRAIN.replace('{sport}', sport),
+        { params: { force_retrain: forceRetrain, background } }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(`Model training failed: ${error.message}`);
+    }
+  }
+
+  async getModelStats(sport) {
+    try {
+      const response = await this.api.get(
+        API_CONFIG.ENDPOINTS.STATS.replace('{sport}', sport)
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get model stats: ${error.message}`);
+    }
+  }
 }
 
-// Placeholder Service (Returns null/empty values until backend is ready)
 class PlaceholderPredictionService {
   async predict(gameData) {
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Return null structure - will be replaced with real data
-    return {
-      predictions: null,
-      confidence: null,
-      processingTime: null,
-      modelVersion: null
-    };
+    return null;
   }
 
   async getHistoricalData() {
@@ -103,10 +137,23 @@ class PlaceholderPredictionService {
     await new Promise(resolve => setTimeout(resolve, 500));
     return null;
   }
+
+  async healthCheck() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return null;
+  }
+
+  async trainModel(sport, forceRetrain = false, background = true) {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return null;
+  }
+
+  async getModelStats(sport) {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return null;
+  }
 }
 
 export const realPredictionService = new PredictionService();
 export const placeholderPredictionService = new PlaceholderPredictionService();
-
-// Placeholder until backend is ready
 export const predictionService = realPredictionService;
