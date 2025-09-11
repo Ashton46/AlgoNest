@@ -5,16 +5,21 @@ import { generateShotChartData } from '../utils/dataGenerators';
 const InteractiveBasketballCourt = ({ prediction, formData }) => {
   const [shotChart, setShotChart] = useState([]);
 
+  const getMatchingPrediction = (predictions, zoneName) => {
+    const searchTerms = zoneName.toLowerCase().split(' ');
+    return predictions.find(p => 
+      p.play_type && searchTerms.some(term => 
+        p.play_type.toLowerCase().includes(term)
+      )
+    );
+  };
+
   useEffect(() => {
     const baseZones = generateShotChartData();
     
-    // Update zones with actual prediction data when ready 
     if (prediction && prediction.predictions) {
       const updatedZones = baseZones.map(zone => {
-        const matchingPrediction = prediction.predictions.find(p => 
-          p.play_type && p.play_type.toLowerCase().includes('shot') || 
-          p.play_type && p.play_type.toLowerCase().includes(zone.name.toLowerCase())
-        );
+        const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
         
         return {
           ...zone,

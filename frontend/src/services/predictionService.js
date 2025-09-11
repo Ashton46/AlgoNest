@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   ENDPOINTS: {
     PREDICT: '/predict',
     HISTORICAL: '/history',
@@ -50,26 +50,33 @@ class PredictionService {
   }
 
   convertToBackendFormat(frontendData) {
-    const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
-    
-    const score_differential = parseInt(score_home) - parseInt(score_away);
-    const time_remaining = (parseInt(time_minutes) || 0) * 60 + (parseInt(time_seconds) || 0);
-    
-    return {
-      sport,
-      score_home: parseInt(score_home) || 0,
-      score_away: parseInt(score_away) || 0,
-      time_minutes: parseInt(time_minutes) || 0,
-      time_seconds: parseInt(time_seconds) || 0,
-      down: parseInt(down) || 1,
-      distance: parseInt(distance) || 10,
-      yard_line: parseInt(yard_line) || 50,
-      score_differential,
-      time_remaining,
-      quarter: frontendData.quarter || 1,
-      shot_clock: frontendData.shot_clock || 24
-    };
+  const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
+  
+  const score_differential = parseInt(score_home) - parseInt(score_away);
+  const time_remaining = (parseInt(time_minutes) || 0) * 60 + (parseInt(time_seconds) || 0);
+  
+  const backendData = {
+    sport,
+    score_home: parseInt(score_home) || 0,
+    score_away: parseInt(score_away) || 0,
+    time_minutes: parseInt(time_minutes) || 0,
+    time_seconds: parseInt(time_seconds) || 0,
+    score_differential,
+    time_remaining,
+  };
+  
+  if (sport === 'football') {
+    backendData.down = parseInt(down) || 1;
+    backendData.distance = parseInt(distance) || 10;
+    backendData.yard_line = parseInt(yard_line) || 50;
+    backendData.quarter = frontendData.quarter || 1;
+  } else if (sport === 'basketball') {
+    backendData.quarter = frontendData.quarter || 1;
+    backendData.shot_clock = frontendData.shot_clock || 24;
   }
+  
+  return backendData;
+}
 
   async getHistoricalData(params) {
     try {

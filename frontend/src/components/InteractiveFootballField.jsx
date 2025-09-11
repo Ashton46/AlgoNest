@@ -9,6 +9,15 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
   const animationRef = useRef(null);
   const [selectedZone, setSelectedZone] = useState(null);
 
+  const getMatchingPrediction = (predictions, zoneName) => {
+    const searchTerms = zoneName.toLowerCase().split(' ');
+    return predictions.find(p => 
+      p.play_type && searchTerms.some(term => 
+        p.play_type.toLowerCase().includes(term)
+      )
+    );
+  };
+
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -73,9 +82,7 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
       const heatmapData = generateHeatmapData(yardLine);
       
       heatmapData.forEach((zone) => {
-        const matchingPrediction = prediction.predictions.find(p => 
-          p.play_type && p.play_type.toLowerCase().includes(zone.name.toLowerCase().split(' ')[0])
-        );
+        const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
         
         const probability = matchingPrediction ? matchingPrediction.probability : 0;
         
@@ -141,9 +148,7 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
 
   const updatedHeatmapData = heatmapData.map(zone => {
     if (prediction && prediction.predictions) {
-      const matchingPrediction = prediction.predictions.find(p => 
-        p.play_type && p.play_type.toLowerCase().includes(zone.name.toLowerCase().split(' ')[0])
-      );
+      const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
       return {
         ...zone,
         adjustedProbability: matchingPrediction ? matchingPrediction.probability : 0

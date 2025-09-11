@@ -30,13 +30,14 @@ class GameSituation(BaseModel):
     def total_time_seconds(self) -> int:
         if self.sport == SportType.football:
             return (4 - self.quarter) * 900 + self.time_remaining if self.quarter else 0
-        else:  # basketball
+        else:
             return (4 - self.quarter) * 720 + self.time_remaining if self.quarter else 0
 
 class PlayPrediction(BaseModel):
     play_type: str
     probability: float = Field(..., ge=0.0, le=1.0)
     description: Optional[str] = None
+    expected_points: Optional[float] = None
     expected_yards: Optional[float] = None
 
 class WinProbability(BaseModel):

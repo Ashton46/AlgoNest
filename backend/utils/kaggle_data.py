@@ -14,7 +14,7 @@ class SportsDataLoader:
         self.initialized = False
         self.datasets = {
             "football": "maxhorowitz/nflplaybyplay2009to2016",
-            "basketball": "nathanlao/nba-basketball-database"
+            "basketball": "wyattowalsh/basketball"
         }
         self.cache = {}
         

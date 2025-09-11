@@ -2,12 +2,13 @@ from fastapi import FastAPI, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import logging
 import uuid
 from typing import Optional
 from contextlib import asynccontextmanager
+import json
 
 from models.schemas import GameSituation, PredictionResponse, SportType, MetricsResponse
 from models.prediction_models import predictor
@@ -96,31 +97,41 @@ async def predict_play(
         if len(processing_times) > 1000:
             processing_times = processing_times[-1000:]
         
-        response = PredictionResponse(
-            predictions=predictions,
-            win_probability=win_prob,
-            confidence=round(max(p.probability for p in predictions), 3),
-            processing_time=f"{processing_time_ms}ms",
-            model_version="v2.0-kaggle",
-            timestamp=datetime.utcnow().isoformat(),
-            prediction_id=prediction_id
-        )
+        formatted_predictions = []
+        for p in predictions:
+            formatted_predictions.append({
+                "play_type": p.play_type,
+                "probability": p.probability,
+                "description": p.description,
+                "expected_points": p.expected_points or p.expected_yards or 0.0
+            })
+        
+        response_data = {
+            "predictions": formatted_predictions,
+            "win_probability": win_prob.dict() if win_prob else None,
+            "confidence": round(max(p.probability for p in predictions), 3),
+            "processing_time": f"{processing_time_ms}ms",
+            "model_version": "v2.0-kaggle",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "prediction_id": prediction_id
+        }
         
         background_tasks.add_task(
             log_prediction,
-            db, prediction_id, situation, response, processing_time_ms, request
+            db, prediction_id, situation, response_data, processing_time_ms, request
         )
         
         redis_client = get_redis()
         if redis_client:
             cache_key = f"prediction:{prediction_id}"
-            redis_client.set(cache_key, response.json(), ex=3600)
+            redis_client.set(cache_key, json.dumps(response_data), ex=3600)
         
-        return response
+        return response_data
         
     except Exception as e:
         logger.error(f"❌ Prediction error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/models/{sport}/train")
 async def train_model(sport: str, force_retrain: bool = False, background: bool = True):
     if sport not in [SportType.football, SportType.basketball]:
@@ -204,7 +215,7 @@ async def get_prediction_history(sport: Optional[str] = None, limit: int = 50, d
         ]
     }
 
-async def log_prediction(db: Session, prediction_id: str, situation: GameSituation, response: PredictionResponse, processing_time: float, request: Request):
+async def log_prediction(db: Session, prediction_id: str, situation: GameSituation, response_data: dict, processing_time: float, request: Request):
     try:
         client_ip = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
@@ -213,11 +224,11 @@ async def log_prediction(db: Session, prediction_id: str, situation: GameSituati
             id=prediction_id,
             sport=situation.sport,
             input_data=situation.dict(),
-            predictions=[p.dict() for p in response.predictions],
-            win_probability=response.win_probability.dict() if response.win_probability else None,
-            confidence=response.confidence,
+            predictions=response_data["predictions"],
+            win_probability=response_data["win_probability"],
+            confidence=response_data["confidence"],
             processing_time_ms=processing_time,
-            model_version=response.model_version,
+            model_version=response_data["model_version"],
             user_agent=user_agent,
             client_ip=client_ip
         )
