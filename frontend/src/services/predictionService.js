@@ -1,14 +1,11 @@
 import axios from 'axios';
 
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+  BASE_URL: 'http://localhost:8000',
   ENDPOINTS: {
-    PREDICT: '/predict',
-    HISTORICAL: '/history',
-    METRICS: '/metrics',
-    HEALTH: '/health',
-    TRAIN: '/models/{sport}/train',
-    STATS: '/models/{sport}/stats'
+    PREDICT: '/api/predict',
+    HISTORICAL: '/api/history',
+    METRICS: '/api/metrics'
   }
 };
 
