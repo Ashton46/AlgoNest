@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Brain, Timer, Target, Zap } from 'lucide-react';
+import { Activity, Brain, Timer, Target, Zap, Clock } from 'lucide-react';
 
 const GameForm = ({ formData, handleChange, handleSubmit, loading }) => {
   return (
@@ -19,6 +19,20 @@ const GameForm = ({ formData, handleChange, handleSubmit, loading }) => {
             <select name="sport" value={formData.sport} onChange={handleChange} className="form-input">
               <option value="football">🏈 Football</option>
               <option value="basketball">🏀 Basketball</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Timer size={16} />
+              Quarter
+            </label>
+            <select name="quarter" value={formData.quarter} onChange={handleChange} className="form-input">
+              <option value="1">1st Quarter</option>
+              <option value="2">2nd Quarter</option>
+              <option value="3">3rd Quarter</option>
+              <option value="4">4th Quarter</option>
+              <option value="5">Overtime</option>
             </select>
           </div>
 
@@ -120,6 +134,25 @@ const GameForm = ({ formData, handleChange, handleSubmit, loading }) => {
                 </div>
               </div>
             </>
+          )}
+
+          {formData.sport === 'basketball' && (
+            <div className="form-group">
+              <label className="form-label">
+                <Clock size={16} />
+                Shot Clock
+              </label>
+              <input 
+                type="number" 
+                name="shot_clock" 
+                placeholder="Seconds" 
+                value={formData.shot_clock} 
+                onChange={handleChange} 
+                className="form-input"
+                min="0"
+                max="24"
+              />
+            </div>
           )}
         </div>
 

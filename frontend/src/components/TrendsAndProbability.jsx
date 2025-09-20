@@ -201,4 +201,5 @@ const EmptyChart = ({ title, message = "No data available" }) => (
   </div>
 );
 
-export default { EmptyChart, TrendsAndProbability };
+export { EmptyChart };
+export default TrendsAndProbability;

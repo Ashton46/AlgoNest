@@ -18,7 +18,8 @@ function App() {
     time_seconds: '',
     down: '',
     distance: '',
-    yard_line: '50'
+    yard_line: '50',
+    quarter: '1'
   });
 
   const [prediction, setPrediction] = useState(null);
