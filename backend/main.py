@@ -2,13 +2,12 @@ from fastapi import FastAPI, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime
 import time
 import logging
 import uuid
 from typing import Optional
 from contextlib import asynccontextmanager
-import json
 
 from models.schemas import GameSituation, PredictionResponse, SportType, MetricsResponse
 from models.prediction_models import predictor
@@ -49,7 +48,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:5174"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -97,41 +96,31 @@ async def predict_play(
         if len(processing_times) > 1000:
             processing_times = processing_times[-1000:]
         
-        formatted_predictions = []
-        for p in predictions:
-            formatted_predictions.append({
-                "play_type": p.play_type,
-                "probability": p.probability,
-                "description": p.description,
-                "expected_points": p.expected_points or p.expected_yards or 0.0
-            })
-        
-        response_data = {
-            "predictions": formatted_predictions,
-            "win_probability": win_prob.dict() if win_prob else None,
-            "confidence": round(max(p.probability for p in predictions), 3),
-            "processing_time": f"{processing_time_ms}ms",
-            "model_version": "v2.0-kaggle",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "prediction_id": prediction_id
-        }
+        response = PredictionResponse(
+            predictions=predictions,
+            win_probability=win_prob,
+            confidence=round(max(p.probability for p in predictions), 3),
+            processing_time=f"{processing_time_ms}ms",
+            model_version="v2.0-kaggle",
+            timestamp=datetime.utcnow().isoformat(),
+            prediction_id=prediction_id
+        )
         
         background_tasks.add_task(
             log_prediction,
-            db, prediction_id, situation, response_data, processing_time_ms, request
+            db, prediction_id, situation, response, processing_time_ms, request
         )
         
         redis_client = get_redis()
         if redis_client:
             cache_key = f"prediction:{prediction_id}"
-            redis_client.set(cache_key, json.dumps(response_data), ex=3600)
+            redis_client.set(cache_key, response.json(), ex=3600)
         
-        return response_data
+        return response
         
     except Exception as e:
         logger.error(f"❌ Prediction error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/api/models/{sport}/train")
 async def train_model(sport: str, force_retrain: bool = False, background: bool = True):
     if sport not in [SportType.football, SportType.basketball]:
@@ -167,13 +156,14 @@ async def get_model_stats(sport: str):
 async def get_metrics():
     avg_processing_time = sum(processing_times) / len(processing_times) if processing_times else 0
     uptime = datetime.now() - start_time
+    uptime_str = str(uptime).split('.')[0]
     
     return MetricsResponse(
         model_accuracy="85.2%",
         average_confidence="78.5%",
         average_processing_time=f"{avg_processing_time:.2f}ms",
         total_predictions=str(total_predictions),
-        uptime=str(uptime).split('.')[0],
+        uptime=uptime_str,
         last_updated=datetime.utcnow().isoformat()
     )
 
@@ -184,13 +174,15 @@ async def health_check():
         "football": predictor.is_trained.get("football", False),
         "basketball": predictor.is_trained.get("basketball", False)
     }
+    uptime = datetime.now() - start_time
+    uptime_str = str(uptime).split('.')[0]
     
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "redis": redis_status,
         "models": models_status,
-        "uptime": str(datetime.now() - start_time).split('.')[0]
+        "uptime": uptime_str
     }
 
 @app.get("/api/history")
@@ -215,7 +207,7 @@ async def get_prediction_history(sport: Optional[str] = None, limit: int = 50, d
         ]
     }
 
-async def log_prediction(db: Session, prediction_id: str, situation: GameSituation, response_data: dict, processing_time: float, request: Request):
+async def log_prediction(db: Session, prediction_id: str, situation: GameSituation, response: PredictionResponse, processing_time: float, request: Request):
     try:
         client_ip = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
@@ -224,11 +216,11 @@ async def log_prediction(db: Session, prediction_id: str, situation: GameSituati
             id=prediction_id,
             sport=situation.sport,
             input_data=situation.dict(),
-            predictions=response_data["predictions"],
-            win_probability=response_data["win_probability"],
-            confidence=response_data["confidence"],
+            predictions=[p.dict() for p in response.predictions],
+            win_probability=response.win_probability.dict() if response.win_probability else None,
+            confidence=response.confidence,
             processing_time_ms=processing_time,
-            model_version=response_data["model_version"],
+            model_version=response.model_version,
             user_agent=user_agent,
             client_ip=client_ip
         )
