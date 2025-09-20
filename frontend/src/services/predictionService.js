@@ -47,33 +47,29 @@ class PredictionService {
   }
 
   convertToBackendFormat(frontendData) {
-  const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
-  
-  const score_differential = parseInt(score_home) - parseInt(score_away);
-  const time_remaining = (parseInt(time_minutes) || 0) * 60 + (parseInt(time_seconds) || 0);
-  
-  const backendData = {
-    sport,
-    score_home: parseInt(score_home) || 0,
-    score_away: parseInt(score_away) || 0,
-    time_minutes: parseInt(time_minutes) || 0,
-    time_seconds: parseInt(time_seconds) || 0,
-    score_differential,
-    time_remaining,
-  };
-  
-  if (sport === 'football') {
-    backendData.down = parseInt(down) || 1;
-    backendData.distance = parseInt(distance) || 10;
-    backendData.yard_line = parseInt(yard_line) || 50;
-    backendData.quarter = frontendData.quarter || 1;
-  } else if (sport === 'basketball') {
-    backendData.quarter = frontendData.quarter || 1;
-    backendData.shot_clock = frontendData.shot_clock || 24;
+    const { sport, score_home, score_away, time_minutes, time_seconds, down, distance, yard_line } = frontendData;
+    
+    let quarter = 1;
+    if (sport === 'football') {
+      const totalMinutes = parseInt(time_minutes) || 0;
+      if (totalMinutes > 45) quarter = 1;
+      else if (totalMinutes > 30) quarter = 2;
+      else if (totalMinutes > 15) quarter = 3;
+      else quarter = 4;
+    }
+    
+    return {
+      sport: sport,
+      score_home: parseInt(score_home) || 0,
+      score_away: parseInt(score_away) || 0,
+      time_minutes: parseInt(time_minutes) || 0,
+      time_seconds: parseInt(time_seconds) || 0,
+      down: parseInt(down) || 1,
+      distance: parseInt(distance) || 10,
+      yard_line: parseInt(yard_line) || 50,
+      quarter: quarter  // Backend expects this field
+    };
   }
-  
-  return backendData;
-}
 
   async getHistoricalData(params) {
     try {
