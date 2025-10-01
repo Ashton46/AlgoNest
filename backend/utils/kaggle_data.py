@@ -5,204 +5,153 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 from decouple import config
 import logging
 from typing import Dict, Tuple
+import zipfile
+from pathlib import Path
+import time
 
 logger = logging.getLogger(__name__)
 
 class SportsDataLoader:
     def __init__(self):
-        self.data_dir = "data"
+        self.data_dir = Path("data")
         self.initialized = False
         self.datasets = {
             "football": "maxhorowitz/nflplaybyplay2009to2016",
-            "basketball": "wyattowalsh/basketball"
+            "basketball": "nathanlauga/nba-games"
         }
         self.cache = {}
         
     def initialize_kaggle(self):
         try:
-            os.environ['KAGGLE_USERNAME'] = config('KAGGLE_USERNAME', default='')
-            os.environ['KAGGLE_KEY'] = config('KAGGLE_KEY', default='')
-            
             self.api = KaggleApi()
             self.api.authenticate()
             self.initialized = True
-            logger.info("✅ Kaggle API authenticated")
+            logger.info("Kaggle API authenticated")
             return True
         except Exception as e:
-            logger.warning(f"❌ Kaggle API failed: {e}")
-            self.initialized = False
+            logger.warning(f"Kaggle API failed: {e}")
             return False
     
     def download_dataset(self, sport: str, force_download: bool = False) -> bool:
+        """Simply download the dataset - no data processing"""
         if not self.initialized and not self.initialize_kaggle():
             return False
         
         dataset_name = self.datasets.get(sport)
         if not dataset_name:
-            logger.error(f"❌ Unknown dataset: {sport}")
+            logger.error(f"Unknown dataset: {sport}")
             return False
         
-        target_dir = os.path.join(self.data_dir, sport)
-        os.makedirs(target_dir, exist_ok=True)
+        target_dir = self.data_dir / sport
+        target_dir.mkdir(parents=True, exist_ok=True)
         
-        if not force_download and os.path.exists(os.path.join(target_dir, ".downloaded")):
-            logger.info(f"📁 {sport} data already downloaded")
+        csv_files = list(target_dir.glob("*.csv"))
+        if not force_download and csv_files:
+            logger.info(f"{sport} data already exists")
             return True
         
         try:
-            logger.info(f"⬇️ Downloading {sport} dataset...")
+            logger.info(f"⬇Downloading {sport} dataset...")
             self.api.dataset_download_files(
                 dataset_name,
-                path=target_dir,
-                unzip=True,
+                path=str(target_dir),
+                unzip=False,
                 quiet=False
             )
+
+            time.sleep(3)
+
+            zip_files = list(target_dir.glob("*.zip"))
+            if not zip_files:
+                logger.error("No zip file downloaded")
+                return False
             
-            with open(os.path.join(target_dir, ".downloaded"), 'w') as f:
-                f.write("downloaded")
+            zip_path = zip_files[0]
+
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(target_dir)
+                logger.info("Successfully extracted zip file")
+
+                zip_path.unlink()
+                
+            except zipfile.BadZipFile:
+                logger.error("Corrupted zip file")
+                return self._handle_manual_extraction(zip_path, target_dir, sport)
             
-            logger.info(f"✅ {sport} dataset downloaded")
-            return True
-            
+            csv_files = list(target_dir.glob("*.csv"))
+            if csv_files:
+                logger.info(f"Downloaded {len(csv_files)} CSV files")
+                return True
+            else:
+                logger.error("No CSV files after extraction")
+                all_files = list(target_dir.glob("*"))
+                logger.info(f"Extracted files: {[f.name for f in all_files]}")
+                return False
+                
         except Exception as e:
-            logger.error(f"❌ Download failed: {e}")
+            logger.error(f"Download failed: {e}")
             return False
-    
-    def get_training_data(self, sport: str, force_retrain: bool = False) -> Tuple[pd.DataFrame, Dict]:
-        if sport in self.cache and not force_retrain:
+
+    def _handle_manual_extraction(self, zip_path: Path, target_dir: Path, sport: str) -> bool:
+        """Handle problematic zip files"""
+        try:
+            import tarfile
+            try:
+                with tarfile.open(zip_path, 'r') as tar_ref:
+                    tar_ref.extractall(target_dir)
+                logger.info("Extracted with tarfile")
+            except:
+                import subprocess
+                result = subprocess.run(['unzip', '-o', str(zip_path), '-d', str(target_dir)], 
+                                    capture_output=True, text=True)
+                if result.returncode == 0:
+                    logger.info("Extracted with system unzip")
+                else:
+                    logger.error(f"All extraction methods failed: {result.stderr}")
+                    return False
+            
+            zip_path.unlink()
+            return True
+        
+        except Exception as e:
+            logger.error(f"Manual extraction failed: {e}")
+            return False
+
+    def get_training_data(self, sport: str, force_redownload: bool = False) -> Tuple[pd.DataFrame, Dict]:
+        """Simply return the raw data - let the model handle processing"""
+        if sport in self.cache and not force_redownload:
             return self.cache[sport]
         
-        data_info = {"sport": sport, "source": "Kaggle", "status": "loaded"}
+        if force_redownload or not list((self.data_dir / sport).glob("*.csv")):
+            self.download_dataset(sport, force_download=force_redownload)
+        
+        data_path = self.data_dir / sport
+        csv_files = list(data_path.glob("*.csv"))
+        
+        if not csv_files:
+            logger.error(f"No CSV files found for {sport}")
+            return pd.DataFrame(), {"sport": sport, "status": "no_files"}
         
         try:
-            if sport == "football":
-                data = self._load_nfl_data()
-            elif sport == "basketball":
-                data = self._load_nba_data()
-            else:
-                return pd.DataFrame(), {**data_info, "status": "unsupported_sport"}
+            main_file = max(csv_files, key=lambda x: x.stat().st_size)
+            logger.info(f" Loading {sport} data from: {main_file.name}")
             
-            if data.empty:
-                logger.warning(f"⚠️ No data for {sport}, using synthetic")
-                data = self._create_synthetic_data(sport)
-                data_info["status"] = "synthetic"
+            data = pd.read_csv(main_file, low_memory=False)
+            
+            data_info = {
+                "sport": sport,
+                "source": "kaggle", 
+                "status": "loaded",
+                "records_loaded": len(data),
+                "file": main_file.name
+            }
             
             self.cache[sport] = (data, data_info)
             return data, data_info
             
         except Exception as e:
-            logger.error(f"❌ Error loading {sport} data: {e}")
-            return self._create_synthetic_data(sport), {**data_info, "status": "error_fallback"}
-    def _load_nfl_data(self) -> pd.DataFrame:
-        data_path = os.path.join(self.data_dir, "football")
-        csv_files = [f for f in os.listdir(data_path) if f.endswith('.csv')]
-        
-        if not csv_files:
-            logger.warning("⚠️ No NFL CSV files found")
-            return pd.DataFrame()
-        
-        main_file = next((f for f in csv_files if 'play' in f.lower() or 'pbp' in f.lower()), csv_files[0])
-        
-        try:
-            file_path = os.path.join(data_path, main_file)
-            logger.info(f"📖 Reading NFL data from: {file_path}")
-            
-            data = pd.read_csv(file_path, low_memory=False, nrows=20000)
-            logger.info(f"📊 Loaded {len(data):,} NFL plays")
-            
-            if 'play_type' in data.columns:
-                data = data[data['play_type'].notna()]
-                logger.info(f"🔢 {len(data):,} plays after cleaning")
-            
-            return data
-            
-        except Exception as e:
-            logger.error(f"❌ Error reading NFL data: {e}")
-            return pd.DataFrame()
-    
-    def _load_nba_data(self) -> pd.DataFrame:
-        data_path = os.path.join(self.data_dir, "basketball")
-        csv_files = [f for f in os.listdir(data_path) if f.endswith('.csv')]
-        
-        if not csv_files:
-            logger.warning("⚠️ No NBA CSV files found")
-            return pd.DataFrame()
-        
-        shot_file = next((f for f in csv_files if 'shot' in f.lower()), None)
-        game_file = next((f for f in csv_files if 'game' in f.lower()), None)
-        
-        try:
-            if shot_file:
-                file_path = os.path.join(data_path, shot_file)
-                logger.info(f"📖 Reading NBA shot data from: {file_path}")
-                data = pd.read_csv(file_path, low_memory=False, nrows=15000)
-                logger.info(f"🏀 Loaded {len(data):,} NBA shots")
-                return data
-            elif game_file:
-                file_path = os.path.join(data_path, game_file)
-                logger.info(f"📖 Reading NBA game data from: {file_path}")
-                data = pd.read_csv(file_path, low_memory=False, nrows=5000)
-                logger.info(f"🏀 Loaded {len(data):,} NBA games")
-                return data
-            else:
-                return pd.DataFrame()
-            
-        except Exception as e:
-            logger.error(f"❌ Error reading NBA data: {e}")
-            return pd.DataFrame()
-    
-    def _create_synthetic_data(self, sport: str) -> pd.DataFrame:
-        logger.info(f"🎭 Creating synthetic data for {sport}")
-        
-        if sport == "football":
-            return self._create_synthetic_nfl_data()
-        elif sport == "basketball":
-            return self._create_synthetic_nba_data()
-        return pd.DataFrame()
-    
-    def _create_synthetic_nfl_data(self) -> pd.DataFrame:
-        np.random.seed(42)
-        n_samples = 8000
-        
-        data = pd.DataFrame({
-            'down': np.random.randint(1, 5, n_samples),
-            'ydstogo': np.random.randint(1, 20, n_samples),
-            'yardline_100': np.random.randint(1, 100, n_samples),
-            'quarter': np.random.randint(1, 6, n_samples),
-            'score_diff': np.random.randint(-21, 21, n_samples),
-        })
-        
-        data['play_type'] = np.where(
-            (data['down'] == 4) & (data['yardline_100'] > 70), 'punt',
-            np.where(
-                (data['down'] == 4) & (data['yardline_100'] <= 30), 'field_goal',
-                np.where(
-                    (data['down'] == 1) | ((data['down'] == 2) & (data['ydstogo'] <= 5)),
-                    np.where(np.random.random(n_samples) < 0.6, 'run', 'pass'),
-                    np.where(np.random.random(n_samples) < 0.7, 'pass', 'run')
-                )
-            )
-        )
-        
-        return data
-    
-    def _create_synthetic_nba_data(self) -> pd.DataFrame:
-        np.random.seed(42)
-        n_samples = 10000
-        
-        data = pd.DataFrame({
-            'quarter': np.random.randint(1, 6, n_samples),
-            'shot_distance': np.random.uniform(0, 30, n_samples),
-            'score_diff': np.random.randint(-30, 30, n_samples),
-        })
-
-        data['shot_type'] = np.where(
-            data['shot_distance'] >= 23.75, '3PT',
-            np.where(data['shot_distance'] <= 8, 'Paint', 'MidRange')
-        )
-        
-        return data
+            logger.error(f"Error loading {sport} data: {e}")
+            return pd.DataFrame(), {"sport": sport, "status": "load_error"}
 
 sports_data = SportsDataLoader()
-
-   
