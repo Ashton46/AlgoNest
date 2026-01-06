@@ -18,6 +18,37 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
     );
   };
 
+  const getZoneProbability = (predictions, zoneName) => {
+    const directMatch = getMatchingPrediction(predictions, zoneName);
+    if (directMatch) {
+      return directMatch.probability;
+    }
+
+    const runPrediction = predictions.find(p =>
+      p.play_type && p.play_type.toLowerCase().includes('run')
+    );
+    const passPrediction = predictions.find(p =>
+      p.play_type && p.play_type.toLowerCase().includes('pass')
+    );
+
+    if (runPrediction) {
+      if (zoneName === 'Run Left' || zoneName === 'Run Center' || zoneName === 'Run Right') {
+        return runPrediction.probability / 3;
+      }
+    }
+
+    if (passPrediction) {
+      if (zoneName === 'Pass Short Left' || zoneName === 'Pass Short Right') {
+        return passPrediction.probability * 0.35;
+      }
+      if (zoneName === 'Pass Deep') {
+        return passPrediction.probability * 0.3;
+      }
+    }
+
+    return 0;
+  };
+
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -82,9 +113,7 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
       const heatmapData = generateHeatmapData(yardLine);
       
       heatmapData.forEach((zone) => {
-        const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
-        
-        const probability = matchingPrediction ? matchingPrediction.probability : 0;
+        const probability = getZoneProbability(prediction.predictions, zone.name);
         
         if (probability > 0) {
           const zoneGeometry = new THREE.SphereGeometry(probability * 3, 16, 16);
@@ -148,10 +177,9 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
 
   const updatedHeatmapData = heatmapData.map(zone => {
     if (prediction && prediction.predictions) {
-      const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
       return {
         ...zone,
-        adjustedProbability: matchingPrediction ? matchingPrediction.probability : 0
+        adjustedProbability: getZoneProbability(prediction.predictions, zone.name)
       };
     }
     return {

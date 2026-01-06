@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import os
-from kaggle.api.kaggle_api_extended import KaggleApi
 from decouple import config
 import logging
 from typing import Dict, Tuple
@@ -19,10 +18,21 @@ class SportsDataLoader:
             "football": "maxhorowitz/nflplaybyplay2009to2016",
             "basketball": "nathanlauga/nba-games"
         }
+
+        self.preferred_columns = {
+            "football": ["play_type", "down", "ydstogo", "yardline_100", "qtr"],
+            "basketball": ["fga", "fg3a", "fgm", "pts", "min"]
+        }
         self.cache = {}
         
     def initialize_kaggle(self):
         try:
+            token_path = Path.home() / ".kaggle" / "kaggle.json"
+            if not token_path.exists():
+                logger.warning(f"Kaggle token not found at {token_path}")
+                return False
+
+            from kaggle.api.kaggle_api_extended import KaggleApi
             self.api = KaggleApi()
             self.api.authenticate()
             self.initialized = True
@@ -118,40 +128,73 @@ class SportsDataLoader:
             logger.error(f"Manual extraction failed: {e}")
             return False
 
+    
+    def _select_csv(self, sport: str, csv_files):
+        preferred = self.preferred_columns.get(sport)
+        if not preferred:
+            return max(csv_files, key=lambda x: x.stat().st_size)
+
+        for csv_path in csv_files:
+            try:
+                header = pd.read_csv(csv_path, nrows=0).columns
+                lower_cols = {c.lower() for c in header}
+                if any(col in lower_cols for col in preferred):
+                    return csv_path
+            except Exception:
+                continue
+
+        return max(csv_files, key=lambda x: x.stat().st_size)
     def get_training_data(self, sport: str, force_redownload: bool = False) -> Tuple[pd.DataFrame, Dict]:
         """Simply return the raw data - let the model handle processing"""
         if sport in self.cache and not force_redownload:
             return self.cache[sport]
-        
+
         if force_redownload or not list((self.data_dir / sport).glob("*.csv")):
             self.download_dataset(sport, force_download=force_redownload)
-        
+
         data_path = self.data_dir / sport
         csv_files = list(data_path.glob("*.csv"))
-        
+
         if not csv_files:
             logger.error(f"No CSV files found for {sport}")
             return pd.DataFrame(), {"sport": sport, "status": "no_files"}
-        
+
+        # Prefer a file with expected columns; otherwise use the largest file.
+        main_file = self._select_csv(sport, csv_files)
+
+        # If the selected file lacks expected columns, force a redownload once.
+        preferred = self.preferred_columns.get(sport)
+        if preferred:
+            try:
+                header = pd.read_csv(main_file, nrows=0).columns
+                lower_cols = {c.lower() for c in header}
+                if not any(col in lower_cols for col in preferred):
+                    logger.warning(f"No preferred columns found in {main_file.name}; re-downloading dataset")
+                    if self.download_dataset(sport, force_download=True):
+                        csv_files = list(data_path.glob("*.csv"))
+                        if csv_files:
+                            main_file = self._select_csv(sport, csv_files)
+            except Exception as e:
+                logger.warning(f"Failed to inspect CSV headers: {e}")
+
         try:
-            main_file = max(csv_files, key=lambda x: x.stat().st_size)
             logger.info(f" Loading {sport} data from: {main_file.name}")
-            
             data = pd.read_csv(main_file, low_memory=False)
-            
+
             data_info = {
                 "sport": sport,
-                "source": "kaggle", 
+                "source": "kaggle",
                 "status": "loaded",
                 "records_loaded": len(data),
                 "file": main_file.name
             }
-            
+
             self.cache[sport] = (data, data_info)
             return data, data_info
-            
+
         except Exception as e:
             logger.error(f"Error loading {sport} data: {e}")
             return pd.DataFrame(), {"sport": sport, "status": "load_error"}
 
 sports_data = SportsDataLoader()
+

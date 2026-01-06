@@ -23,16 +23,22 @@ async def startup_event(app: FastAPI):
     logger.info("Starting AI Sports Backend...")
     init_db()
     
-    sports_data.initialize_kaggle()
+    kaggle_ready = False
+    try:
+        kaggle_ready = sports_data.initialize_kaggle()
+    except Exception as e:
+        logger.warning("Kaggle init skipped: %s", e)
     
-    logger.info("Pre-training ML models...")
-    
-    football_result = predictor.train_sport_model("football")
-    logger.info(f"🏈 Football model: {football_result.get('status', 'unknown')}")
-    
-    basketball_result = predictor.train_sport_model("basketball")
-    logger.info(f"🏀 Basketball model: {basketball_result.get('status', 'unknown')}")
-    
+    if kaggle_ready:
+        logger.info("Pre-training ML models...")
+        
+        football_result = predictor.train_sport_model("football")
+        logger.info(f"dY?^ Football model: {football_result.get('status', 'unknown')}")
+        
+        basketball_result = predictor.train_sport_model("basketball")
+        logger.info(f"dY?? Basketball model: {basketball_result.get('status', 'unknown')}")
+    else:
+        logger.warning("Skipping model pre-training because Kaggle is not configured")
     logger.info("✅ Startup completed")
     yield
     logger.info("Application is shutting down.")

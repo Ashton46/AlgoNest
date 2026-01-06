@@ -4,6 +4,36 @@ import { TrendingUp, BarChart3, Target, Activity } from 'lucide-react';
 import { predictionService } from '../services/predictionService';
 
 const TrendsAndProbability = ({ prediction }) => {
+const normalizeHistory = (historicalData) => {
+    if (!historicalData) return [];
+    if (Array.isArray(historicalData)) return historicalData;
+    if (historicalData.predictions) {
+      return historicalData.predictions.map((item, index) => {
+        const confidence = Number(item.confidence || 0);
+        return {
+          game: index + 1,
+          accuracy: Math.round(confidence * 100),
+          confidence: Math.round(confidence * 100)
+        };
+      });
+    }
+    return [];
+  };
+
+  const normalizeMetrics = (metricsData) => {
+    if (!metricsData) return null;
+    if (metricsData.model_accuracy) {
+      return {
+        modelAccuracy: metricsData.model_accuracy,
+        confidence: metricsData.average_confidence,
+        predictionTime: metricsData.average_processing_time,
+        gamesAnalyzed: metricsData.total_predictions,
+        uptime: metricsData.uptime
+      };
+    }
+    return metricsData;
+  };
+
   const [trendData, setTrendData] = useState([]);
   const [winProbData, setWinProbData] = useState([]);
   const [metrics, setMetrics] = useState(null);
@@ -18,14 +48,12 @@ const TrendsAndProbability = ({ prediction }) => {
           predictionService.getMetrics()
         ]);
        
-        setTrendData(historicalData || []);
-        setMetrics(metricsData);
+        setTrendData(normalizeHistory(historicalData));
+        setMetrics(normalizeMetrics(metricsData));
         
-        setWinProbData([]);
       } catch (error) {
         console.error('Failed to load analytics data:', error);
         setTrendData([]);
-        setWinProbData([]);
         setMetrics(null);
       } finally {
         setLoading(false);
@@ -34,6 +62,21 @@ const TrendsAndProbability = ({ prediction }) => {
 
     loadAnalyticsData();
   }, []);
+
+  useEffect(() => {
+    if (prediction && prediction.win_probability) {
+      setWinProbData([
+        {
+          time: 'Now',
+          homeWinProb: Math.round((prediction.win_probability.home_win_prob || 0) * 100),
+          awayWinProb: Math.round((prediction.win_probability.away_win_prob || 0) * 100)
+        }
+      ]);
+    } else {
+      setWinProbData([]);
+    }
+  }, [prediction]);
+
 
   const EmptyChart = ({ title, message = "No data available" }) => (
     <div className="empty-chart">

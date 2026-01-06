@@ -16,4 +16,4 @@ kaggle==1.6.17
 requests==2.32.3
 opendatasets==0.1.22
 
-imbalanced-learn==0.12.4P
+imbalanced-learn==0.12.4
