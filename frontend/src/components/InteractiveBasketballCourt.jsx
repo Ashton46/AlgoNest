@@ -15,6 +15,17 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
   };
 
   const getZoneProbability = (predictions, zoneName) => {
+
+  const normalizeZoneProbabilities = (zones) => {
+    const total = zones.reduce((sum, zone) => sum + (zone.probability || 0), 0);
+    if (total <= 0) {
+      return zones;
+    }
+    return zones.map(zone => ({
+      ...zone,
+      probability: zone.probability / total
+    }));
+  };
     const directMatch = getMatchingPrediction(predictions, zoneName);
     if (directMatch) {
       return directMatch.probability;
@@ -58,12 +69,12 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
     const baseZones = generateShotChartData();
     
     if (prediction && prediction.predictions) {
-      const updatedZones = baseZones.map(zone => {
+      const updatedZones = normalizeZoneProbabilities(baseZones.map(zone => {
         return {
           ...zone,
           probability: getZoneProbability(prediction.predictions, zone.name)
         };
-      });
+      }));
       setShotChart(updatedZones);
     } else {
       setShotChart(baseZones);
