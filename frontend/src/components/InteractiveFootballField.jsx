@@ -49,6 +49,17 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
     return 0;
   };
 
+  const normalizeZoneProbabilities = (zones) => {
+    const total = zones.reduce((sum, zone) => sum + (zone.adjustedProbability || 0), 0);
+    if (total <= 0) {
+      return zones;
+    }
+    return zones.map(zone => ({
+      ...zone,
+      adjustedProbability: zone.adjustedProbability / total
+    }));
+  };
+
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -175,7 +186,7 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
 
   const heatmapData = generateHeatmapData(parseInt(formData.yard_line) || 50);
 
-  const updatedHeatmapData = heatmapData.map(zone => {
+  const updatedHeatmapData = normalizeZoneProbabilities(heatmapData.map(zone => {
     if (prediction && prediction.predictions) {
       return {
         ...zone,
@@ -186,7 +197,7 @@ const InteractiveFootballField = ({ prediction, formData, animateField }) => {
       ...zone,
       adjustedProbability: 0
     };
-  });
+  }));
 
   return (
     <div className="interactive-field-container">
