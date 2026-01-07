@@ -32,7 +32,6 @@ const GameForm = ({ formData, handleChange, handleSubmit, loading }) => {
               <option value="2">2nd Quarter</option>
               <option value="3">3rd Quarter</option>
               <option value="4">4th Quarter</option>
-              <option value="5">Overtime</option>
             </select>
           </div>
 
