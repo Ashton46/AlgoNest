@@ -406,6 +406,7 @@ class UnifiedSportsPredictor:
         score_home = int(features.get("score_home", 0) or 0)
         score_away = int(features.get("score_away", 0) or 0)
         quarter = int(features.get("quarter", 1) or 1)
+        quarter = min(max(quarter, 1), 4)
         time_minutes = int(features.get("time_minutes", 0) or 0)
         time_seconds = int(features.get("time_seconds", 0) or 0)
 
@@ -436,6 +437,7 @@ class UnifiedSportsPredictor:
         score_home = int(features.get("score_home", 0) or 0)
         score_away = int(features.get("score_away", 0) or 0)
         quarter = int(features.get("quarter", 1) or 1)
+        quarter = min(max(quarter, 1), 4)
         time_minutes = int(features.get("time_minutes", 0) or 0)
         time_seconds = int(features.get("time_seconds", 0) or 0)
         minutes_left = max(0, (4 - quarter) * 15 + time_minutes + (time_seconds / 60))
@@ -541,6 +543,7 @@ class UnifiedSportsPredictor:
         distance = int(features.get("distance", 10) or 10)
         yard_line = int(features.get("yard_line", 50) or 50)
         quarter = int(features.get("quarter", 1) or 1)
+        quarter = min(max(quarter, 1), 4)
         score_home = int(features.get("score_home", 0) or 0)
         score_away = int(features.get("score_away", 0) or 0)
         score_diff = score_home - score_away
@@ -555,6 +558,7 @@ class UnifiedSportsPredictor:
 
     def _convert_nba_features(self, features: Dict) -> np.ndarray:
         quarter = int(features.get("quarter", 1) or 1)
+        quarter = min(max(quarter, 1), 4)
         score_home = int(features.get("score_home", 0) or 0)
         score_away = int(features.get("score_away", 0) or 0)
         score_diff = score_home - score_away

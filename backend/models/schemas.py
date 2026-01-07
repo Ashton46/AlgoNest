@@ -15,7 +15,7 @@ class GameSituation(BaseModel):
     down: Optional[int] = Field(None, ge=1, le=4)
     distance: Optional[int] = Field(None, ge=1, le=99)
     yard_line: Optional[int] = Field(None, ge=1, le=99)
-    quarter: Optional[int] = Field(None, ge=1, le=4)
+    quarter: Optional[int] = Field(None, ge=1, le=5)
     shot_clock: Optional[int] = Field(None, ge=0, le=24)
 
     @property
@@ -28,10 +28,13 @@ class GameSituation(BaseModel):
 
     @property
     def total_time_seconds(self) -> int:
+        if not self.quarter:
+            return 0
+
         if self.sport == SportType.football:
-            return (4 - self.quarter) * 900 + self.time_remaining if self.quarter else 0
-        else:
-            return (4 - self.quarter) * 720 + self.time_remaining if self.quarter else 0
+            return max(0, (4 - self.quarter) * 900 + self.time_remaining)
+
+        return max(0, (4 - self.quarter) * 720 + self.time_remaining)
 
 class PlayPrediction(BaseModel):
     play_type: str
