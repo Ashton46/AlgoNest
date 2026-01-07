@@ -26,6 +26,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [animateField, setAnimateField] = useState(false);
+  const [activeTab, setActiveTab] = useState('field');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,24 +95,40 @@ function App() {
             {prediction && prediction.predictions && (
               <>
                 <div className="visualization-tabs">
-                  <div className="tab active">Field Analysis</div>
-                  <div className="tab">Trends & Probability</div>
+                  <button
+                    className={`tab ${activeTab === 'field' ? 'active' : ''}`}
+                    type="button"
+                    onClick={() => setActiveTab('field')}
+                  >
+                    Field Analysis
+                  </button>
+                  <button
+                    className={`tab ${activeTab === 'trends' ? 'active' : ''}`}
+                    type="button"
+                    onClick={() => setActiveTab('trends')}
+                  >
+                    Trends & Probability
+                  </button>
                 </div>
                 
-                {formData.sport === 'football' ? (
-                  <InteractiveFootballField 
-                    prediction={prediction} 
-                    formData={formData}
-                    animateField={animateField}
-                  />
-                ) : (
-                  <InteractiveBasketballCourt 
-                    prediction={prediction} 
-                    formData={formData}
-                  />
+                {activeTab === 'field' && (
+                  formData.sport === 'football' ? (
+                    <InteractiveFootballField 
+                      prediction={prediction} 
+                      formData={formData}
+                      animateField={animateField}
+                    />
+                  ) : (
+                    <InteractiveBasketballCourt 
+                      prediction={prediction} 
+                      formData={formData}
+                    />
+                  )
                 )}
                 
-                <TrendsAndProbability prediction={prediction} />
+                {activeTab === 'trends' && (
+                  <TrendsAndProbability prediction={prediction} />
+                )}
               </>
             )}
             

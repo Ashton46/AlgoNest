@@ -14,16 +14,54 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
     );
   };
 
+  const getZoneProbability = (predictions, zoneName) => {
+    const directMatch = getMatchingPrediction(predictions, zoneName);
+    if (directMatch) {
+      return directMatch.probability;
+    }
+
+    const three = predictions.find(p =>
+      p.play_type && p.play_type.toLowerCase().includes('3')
+    );
+    const mid = predictions.find(p =>
+      p.play_type && p.play_type.toLowerCase().includes('mid')
+    );
+    const paint = predictions.find(p =>
+      p.play_type && p.play_type.toLowerCase().includes('paint')
+    );
+
+    const threeProb = three ? three.probability : 0;
+    const midProb = mid ? mid.probability : 0;
+    const paintProb = paint ? paint.probability : Math.max(0, 1 - (threeProb + midProb));
+
+    const zone = zoneName.toLowerCase();
+
+    if (zone.includes('3pt')) {
+      if (zone.includes('top')) {
+        return threeProb * 0.5;
+      }
+      return threeProb * 0.25;
+    }
+
+    if (zone.includes('mid-range')) {
+      return midProb * 0.5;
+    }
+
+    if (zone.includes('paint')) {
+      return paintProb;
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     const baseZones = generateShotChartData();
     
     if (prediction && prediction.predictions) {
       const updatedZones = baseZones.map(zone => {
-        const matchingPrediction = getMatchingPrediction(prediction.predictions, zone.name);
-        
         return {
           ...zone,
-          probability: matchingPrediction ? matchingPrediction.probability : null
+          probability: getZoneProbability(prediction.predictions, zone.name)
         };
       });
       setShotChart(updatedZones);
