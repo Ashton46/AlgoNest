@@ -14,8 +14,6 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
     );
   };
 
-  const getZoneProbability = (predictions, zoneName) => {
-
   const normalizeZoneProbabilities = (zones) => {
     const total = zones.reduce((sum, zone) => sum + (zone.probability || 0), 0);
     if (total <= 0) {
@@ -26,6 +24,8 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
       probability: zone.probability / total
     }));
   };
+
+  const getZoneProbability = (predictions, zoneName) => {
     const directMatch = getMatchingPrediction(predictions, zoneName);
     if (directMatch) {
       return directMatch.probability;
@@ -92,19 +92,22 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
         <svg viewBox="0 0 500 470" className="basketball-court">
           {/* Court outline */}
           <rect x="25" y="25" width="450" height="420" fill="#D4A574" stroke="#000" strokeWidth="3"/>
-          
-          {/* Three-point line */}
-          <path d="M 25 95 Q 250 200 475 95" fill="none" stroke="#000" strokeWidth="2"/>
-          
-          {/* Free throw circle */}
-          <circle cx="250" cy="95" r="60" fill="none" stroke="#000" strokeWidth="2"/>
-          
+
+          {/* Hoop/backboard */}
+          <rect x="235" y="30" width="30" height="5" fill="#000" />
+          <circle cx="250" cy="45" r="7" fill="none" stroke="#FF6600" strokeWidth="4"/>
+
           {/* Key/Paint */}
           <rect x="190" y="25" width="120" height="190" fill="rgba(255,255,255,0.1)" stroke="#000" strokeWidth="2"/>
-          
-          {/* Basketball hoop */}
-          <circle cx="250" cy="45" r="12" fill="none" stroke="#FF6600" strokeWidth="4"/>
-          
+
+          {/* Free throw circle */}
+          <circle cx="250" cy="215" r="60" fill="none" stroke="#000" strokeWidth="2"/>
+
+          {/* Three-point lines (corner + arc) */}
+          <line x1="65" y1="25" x2="65" y2="185" stroke="#000" strokeWidth="2" />
+          <line x1="435" y1="25" x2="435" y2="185" stroke="#000" strokeWidth="2" />
+          <path d="M 65 185 A 185 185 0 0 0 435 185" fill="none" stroke="#000" strokeWidth="2"/>
+
           {/* Probability zones - only show if data exists */}
           {shotChart.map((zone, index) => (
             zone.probability !== null && zone.probability > 0 && (
@@ -130,10 +133,10 @@ const InteractiveBasketballCourt = ({ prediction, formData }) => {
               </g>
             )
           ))}
-          
+
           {/* Player position */}
-          <circle cx="250" cy="200" r="8" fill="#00ff88" stroke="#fff" strokeWidth="2"/>
-          
+          <circle cx="250" cy="260" r="8" fill="#00ff88" stroke="#fff" strokeWidth="2"/>
+
           {/* Show placeholder if no data */}
           {shotChart.every(zone => zone.probability === null) && (
             <text 
